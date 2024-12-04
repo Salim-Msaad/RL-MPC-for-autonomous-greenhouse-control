@@ -1,0 +1,15 @@
+export/export_20241203_175603/models/SAC/deterministic/
+export/export_20241203_175603/models/SAC/deterministic/
+Mean reward: -25.63 - Num episodes: 5
+Mean reward: -23.13 - Num episodes: 5
+ 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,920/1,920  [ 0:00:02 < 0:00:00 , 809 it/s ]
+Mean reward: -20.06 - Num episodes: 5
+models/SAC/stochastic/scale_0.2/best_model.zip
+models/SAC/stochastic/scale_0.2/vecNormEnv.pkl
+SAC
+<stable_baselines3.sac.sac.SAC object at 0x15551b539190>
+Total performance recieved from environment 4.176634165680162
+Total reward recieved from evaluation 4.7800226627922795
+Total penalties recieved from evaluation 0.6033885000756244
+Total evaluted performance recieved from environment 4.176634162716655
+4.178270027102862

@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from SHARED.params import *
-from IPython.display import display
 from tabulate import tabulate
-from pprint import pprint
 from tabulate import tabulate
 from numpy import loadtxt
 import os
+from datetime import datetime
+import pickle
 
 def average_metrics(path, sims = 30):
     reward_logs = []
@@ -73,7 +73,7 @@ def average_metrics(path, sims = 30):
     plt.plot(avg_reward_logs,label = "Reward")
     plt.grid(True)
     plt.xlabel("Time Step (k)")
-    plt.ylabel("$Euro \cdot m^2%")
+    plt.ylabel("$Euro  m^2%")
     plt.title("Cumulative Reward")
     plt.show()
     
@@ -142,8 +142,18 @@ def average_metrics(path, sims = 30):
     
 
 
-def print_metrics(Y_log= np.empty((0,)), U_log= np.empty((0,)), D_log= np.empty((0,)), vf= np.empty((0,)),rewards= np.empty((0,)), day_range = (0,tf), time_log = np.empty((0,)), show_charts=True):
-    
+def print_metrics(
+    Y_log= np.empty((0,)), 
+    U_log= np.empty((0,)), 
+    D_log= np.empty((0,)), 
+    vf= np.empty((0,)),
+    rewards= np.empty((0,)), 
+    day_range = (0,tf), 
+    time_log = np.empty((0,)), 
+    show_charts=True,
+    curr_time_path = None
+    ):
+
     Y_log = Y_log[:, :][(day_range[0] * 96):(day_range[1]) * 96]
     U_log = U_log[:, :][(day_range[0] * 96):(day_range[1]) * 96]
     D_log = D_log[:, :][(day_range[0] * 96):(day_range[1]) * 96]
@@ -152,44 +162,29 @@ def print_metrics(Y_log= np.empty((0,)), U_log= np.empty((0,)), D_log= np.empty(
         #Disturbances
         fig, axs_d = plt.subplots(2, 2, sharex=True, sharey=False, layout='constrained', figsize=(15, 3))
         fig.suptitle("Disturbances")
-        for i, (title, ylabel) in enumerate([("Irradiance", "$W \cdot m^{-2}$"), ("Outdoor C02", "$kg \cdot m^{-3}$"),
-                                            ("Outdoor Temperature", "$^{\circ}C$"), ("Outdoor Humidity", "$kg \cdot m^{-3}$")]):
+        for i, (title, ylabel) in enumerate([("Irradiance", "$W  m^{-2}$"), ("Outdoor C02", "$kg  m^{-3}$"),
+                                            ("Outdoor Temperature", "$^{o}C$"), ("Outdoor Humidity", "$kg  m^{-3}$")]):
             ax = axs_d[i // 2, i % 2]
             ax.set_title(title)
             ax.plot(D_log[:,i], color = 'lightCoral',linestyle='-', marker='.', markerfacecolor='g', markeredgecolor='g',markersize = 3)
             ax.grid(True)
             ax.set_ylabel(ylabel)
 
+        plt.savefig("export/" + curr_time_path + "/salim_figure_disturbances.png")
+        with open("export/" + curr_time_path + "/salim_figure_disturbances.pkl", "wb") as f:
+            pickle.dump(fig, f)  # gcf = Get Current Figure
+        plt.close()  # Close the figure
 
         #Outputs
         fig, axs_y = plt.subplots(2, 2, sharex=True, sharey=False, layout='constrained', figsize=(15, 3))
         fig.suptitle("Outputs")
-        for i, (title, ylabel) in enumerate([("Drymass", "$kg \cdot m^{-2}$"), ("Indoor C02", "ppm"),
-                                            ("Indoor Temperature", "$^{\circ}C$"), ("Indoor Humidity","%")]):
+        for i, (title, ylabel) in enumerate([("Drymass", "$kg  m^{-2}$"), ("Indoor C02", "ppm"),
+                                            ("Indoor Temperature", "$^{o}C$"), ("Indoor Humidity","%")]):
             ax = axs_y[i // 2, i % 2]
             ax.set_title(title)
             ax.plot(Y_log[:,i], color = 'lightCoral', linestyle='-', marker='.', markerfacecolor='g', markeredgecolor='g', markersize = 3)
             ax.grid(True)
             ax.set_ylabel(ylabel)
-
-
-        #Control Actions
-        fig, axs_u = plt.subplots(3,1,sharex=True, sharey=False, layout='constrained',figsize=(7, 5))
-        fig.suptitle("Control Actions")
-        for i, (title, ylabel) in enumerate([("C02 Injection Rate", "$mg/(m^{2} \cdot s)$"), ("Ventilation Rate", "$mm/s$"),
-                                            ("Heating Supply", "$W \cdot m^{-2}$")]):
-            ax = axs_u[i]
-            ax.set_title(title)
-            ax.plot(U_log[:,i], color = 'lightCoral',linestyle='-', marker='.', markerfacecolor='g', markeredgecolor='g', markersize = 3)
-            ax.grid(True)
-            ax.set_ylabel(ylabel)
-
-
-        #Constraints
-        
-        
-        # axs_y[0,1].plot(c02_mins[(day_range[0] * 96):(day_range[1]) * 96],color = 'k' ,linestyle = '--')
-        # axs_y[0,1].plot(c02_maxs[(day_range[0] * 96):(day_range[1]) * 96],color = 'k' ,linestyle = '--')
 
         #CO2 Constrains
         axs_y[0,1].axhline(y=C02_MAX_CONSTRAIN_MPC,color = 'k' ,linestyle = '--')
@@ -201,12 +196,27 @@ def print_metrics(Y_log= np.empty((0,)), U_log= np.empty((0,)), D_log= np.empty(
         #Temperature Constrains
         axs_y[1,0].axhline(y=TEMP_MAX_CONSTRAIN_MPC,color = 'k' ,linestyle = '--')
         axs_y[1,0].axhline(y=TEMP_MIN_CONSTRAIN_MPC,color = 'k' ,linestyle = '--')
-        
-        # axs_y[0,1].plot(temp_mins[(day_range[0] * 96):(day_range[1]) * 96],color = 'k' ,linestyle = '--')
-        # axs_y[0,1].plot(temp_maxs[(day_range[0] * 96):(day_range[1]) * 96],color = 'k' ,linestyle = '--')
 
+        plt.savefig("export/" + curr_time_path + "/salim_figure_outputs.png")
+        with open("export/" + curr_time_path + "/salim_figure_outputs.pkl", "wb") as f:
+            pickle.dump(fig, f)  # gcf = Get Current Figure
+            plt.close()  # Close the figure
 
+        #Control Actions
+        fig, axs_u = plt.subplots(3,1,sharex=True, sharey=False, layout='constrained',figsize=(7, 5))
+        fig.suptitle("Control Actions")
+        for i, (title, ylabel) in enumerate([("C02 Injection Rate", "$mg/(m^{2}  s)$"), ("Ventilation Rate", "$mm/s$"),
+                                            ("Heating Supply", "$W  m^{-2}$")]):
+            ax = axs_u[i]
+            ax.set_title(title)
+            ax.plot(U_log[:,i], color = 'lightCoral',linestyle='-', marker='.', markerfacecolor='g', markeredgecolor='g', markersize = 3)
+            ax.grid(True)
+            ax.set_ylabel(ylabel)
 
+        plt.savefig("export/" + curr_time_path + "/salim_figure_actions.png")
+        with open("export/" + curr_time_path + "/salim_figure_actions.pkl", "wb") as f:
+            pickle.dump(fig, f)  # gcf = Get Current Figure
+            plt.close()  # Close the figure 
     
     
         #Value function and cumulative rewards
@@ -225,6 +235,11 @@ def print_metrics(Y_log= np.empty((0,)), U_log= np.empty((0,)), D_log= np.empty(
             axs_vf.legend()
             axs_vf.grid(True)
             axs_vf.set_ylabel('value/reward')
+
+        plt.savefig("export/" + curr_time_path + "/salim_figure_value.png")
+        with open("export/" + curr_time_path + "/salim_figure_value.pkl", "wb") as f:
+            pickle.dump(fig, f)  # gcf = Get Current Figure
+            plt.close()  # Close the figure 
         
     #Calculating Rewards
     delta_drymass = Y_log[-1,0] - Y_log[0,0]
@@ -294,8 +309,8 @@ def compare_metrics(Y_logs = {}, U_logs = {}, D_logs = {}, reward_logs = {}, com
     fig, axs_y = plt.subplots(4,1, sharex=True, sharey=False, layout='constrained', figsize=(15, 10))
     fig.suptitle("Outputs")
         
-    for i, (title, ylabel) in enumerate([("Drymass", "$kg \cdot m^{-2}$"), ("Indoor C02", "ppm"),
-                                        ("Indoor Temperature", "$^{\circ}C$"), ("Indoor Humidity","%")]):
+    for i, (title, ylabel) in enumerate([("Drymass", "$kg  m^{-2}$"), ("Indoor C02", "ppm"),
+                                        ("Indoor Temperature", "$^{o}C$"), ("Indoor Humidity","%")]):
         ax = axs_y[i]
         ax.set_title(title)
         ax.plot(y_rl[:,i],alpha = 0.7,     label = "RL")
@@ -320,8 +335,8 @@ def compare_metrics(Y_logs = {}, U_logs = {}, D_logs = {}, reward_logs = {}, com
     # Time series      
     fig, axs_u = plt.subplots(3,1,sharex=True, sharey=False, layout='constrained',figsize=(15, 10))
     fig.suptitle("Control Actions")
-    for i, (title, ylabel) in enumerate([("C02 Injection Rate", "$mg/(m^{2} \cdot s)$"), ("Ventilation Rate", "$mm/s$"),
-                                        ("Heating Supply", "$W \cdot m^{-2}$")]):
+    for i, (title, ylabel) in enumerate([("C02 Injection Rate", "$mg/(m^{2}  s)$"), ("Ventilation Rate", "$mm/s$"),
+                                        ("Heating Supply", "$W  m^{-2}$")]):
         ax = axs_u[i]
         ax.set_title(title)
         ax.plot(u_rl[:,i],alpha = 0.7,label = 'RL')
@@ -366,7 +381,7 @@ def compare_metrics(Y_logs = {}, U_logs = {}, D_logs = {}, reward_logs = {}, com
     ax_growth = axs_bars[0][0]
     ax_growth.set_title("Drymass Growth")
     bars = ax_growth.bar(["RL","MPC","RL_MPC"],delta_drymass, color =  colors)   
-    ax_growth.set_ylabel("$g \cdot m^{-2}$")
+    ax_growth.set_ylabel("$g  m^{-2}$")
     # Add text annotations
     for i, value in enumerate(delta_drymass):
         ax_growth.text(i, value, str(round(value,1)),
@@ -376,7 +391,7 @@ def compare_metrics(Y_logs = {}, U_logs = {}, D_logs = {}, reward_logs = {}, com
     ax_epi =axs_bars[0][1]
     ax_epi.set_title("Economic Benefit")
     ax_epi.bar(["RL","MPC","RL_MPC"],final_epi, color =  colors)
-    ax_epi.set_ylabel("Euro $\cdot m^{-2}$")
+    ax_epi.set_ylabel("Euro $ m^{-2}$")
     # Add text annotations
     for i, value in enumerate(final_epi):
         ax_epi.text(i, value, str(round(value,1)),
@@ -406,7 +421,7 @@ def compare_metrics(Y_logs = {}, U_logs = {}, D_logs = {}, reward_logs = {}, com
     ax_c02 = axs_bars[1][1]
     ax_c02.set_title("C02")
     ax_c02.bar(["RL","MPC","RL_MPC"],total_c02*dT/1e6, color =  colors)
-    ax_c02.set_ylabel("$kg/(m^{2} \cdot s)$")
+    ax_c02.set_ylabel("$kg/(m^{2}  s)$")
     # Add text annotations
     for i, value in enumerate(total_c02*dT/1e6):
         ax_c02.text(i, value, str(round(value,3)),
